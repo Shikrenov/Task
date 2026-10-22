@@ -11,4 +11,10 @@ export const ASSET_URLS = {
   winText: new URL('../../assets/txt.png', import.meta.url).href,
 } as const;
 
+export const AUDIO_URLS = {
+  background: new URL('../../assets/background_sound.mp3', import.meta.url).href,
+  barOpen: new URL('../../assets/bar_open_sound.mp3', import.meta.url).href,
+  tigerWin: new URL('../../assets/tiger_win_sound.mp3', import.meta.url).href,
+} as const;
+
 export type GameAsset = keyof typeof ASSET_URLS;
