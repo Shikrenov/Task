@@ -43,7 +43,8 @@ export class GameScene extends Container {
     this.createBars(textures);
 
     this.meter = new LockMeter(textures.plate);
-    this.meter.position.set(43, 173);
+    this.meter.position.set(36, 28);
+    this.meter.scale.set(0.75);
     this.addChild(this.meter);
 
     this.winText = new Sprite(textures.winText);
@@ -115,6 +116,7 @@ export class GameScene extends Container {
   private async playWinSequence(): Promise<void> {
     this.setState('winning');
     this.setChildIndex(this.tiger, this.children.length - 1);
+    this.setChildIndex(this.meter, this.children.length - 1);
     this.setChildIndex(this.winText, this.children.length - 1);
     this.winText.visible = true;
 

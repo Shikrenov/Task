@@ -40,8 +40,8 @@ export class CageBar extends Container {
     const shadowSprite = new Sprite(options.shadowTexture);
     shadowSprite.anchor.set(0, 0.5);
     shadowSprite.scale.x = isRight ? -1 : 1;
-    shadowSprite.position.set(isRight ? -5 : 5, 5);
-    shadowSprite.alpha = 0.68;
+    shadowSprite.position.set(0, 3);
+    shadowSprite.alpha = 0.42;
 
     this.barSprite = new Sprite(options.barTexture);
     this.barSprite.anchor.set(0, 0.5);
