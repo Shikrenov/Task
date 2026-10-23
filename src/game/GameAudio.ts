@@ -27,6 +27,7 @@ export class GameAudio {
   private backgroundStartPending = false;
   private backgroundDucked = false;
   private muted = false;
+  private readonly cancelPendingBarWaits = new Set<() => void>();
   private resolveTigerPlayback: (() => void) | undefined;
 
   public constructor() {
@@ -44,9 +45,52 @@ export class GameAudio {
   };
 
   public playBarSound(): void {
-    const sound = this.barSounds[this.nextBarSoundIndex];
-    this.nextBarSoundIndex = (this.nextBarSoundIndex + 1) % this.barSounds.length;
+    const sound = this.takeNextBarSound();
     this.restartAndPlay(sound);
+  }
+
+  public playBarSoundAndWait(): Promise<void> {
+    if (this.muted) {
+      return Promise.resolve();
+    }
+
+    const sound = this.takeNextBarSound();
+    sound.pause();
+    this.rewind(sound);
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const cancel = (): void => {
+        sound.pause();
+        this.rewind(sound);
+        finish();
+      };
+      const finish = (): void => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        sound.removeEventListener('ended', finish);
+        sound.removeEventListener('error', finish);
+        sound.removeEventListener('abort', finish);
+        sound.removeEventListener('emptied', finish);
+        this.cancelPendingBarWaits.delete(cancel);
+        resolve();
+      };
+
+      sound.addEventListener('ended', finish);
+      sound.addEventListener('error', finish);
+      sound.addEventListener('abort', finish);
+      sound.addEventListener('emptied', finish);
+      this.cancelPendingBarWaits.add(cancel);
+
+      try {
+        void sound.play().catch(finish);
+      } catch {
+        finish();
+      }
+    });
   }
 
   public ensureBackgroundPlaying(): void {
@@ -99,6 +143,11 @@ export class GameAudio {
 
   public toggleMuted(): boolean {
     this.muted = !this.muted;
+
+    if (this.muted) {
+      [...this.cancelPendingBarWaits].forEach((cancel) => cancel());
+    }
+
     this.applyVolumes();
     return this.muted;
   }
@@ -111,6 +160,12 @@ export class GameAudio {
     audio.pause();
     this.rewind(audio);
     this.playSafely(audio);
+  }
+
+  private takeNextBarSound(): HTMLAudioElement {
+    const sound = this.barSounds[this.nextBarSoundIndex];
+    this.nextBarSoundIndex = (this.nextBarSoundIndex + 1) % this.barSounds.length;
+    return sound;
   }
 
   private playSafely(audio: HTMLAudioElement, onFailure?: () => void): void {

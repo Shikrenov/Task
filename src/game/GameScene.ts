@@ -31,6 +31,7 @@ const TIGER_START_SCALE = 0.281;
 const GAMEPLAY_REVEAL_DELAY = 0.12;
 const GAMEPLAY_REVEAL_DURATION = 0.82;
 const TIGER_NORMAL_LAYER_INDEX = 1;
+const INTERACTION_LOCK_SECONDS = 0.5;
 
 export class GameScene extends Container {
   private readonly gameplayContainer = new Container();
@@ -131,16 +132,26 @@ export class GameScene extends Container {
     }
 
     const bar = this.bars[id - 1];
-    this.audio.playBarSound();
-    await bar.open();
+    const completesRound = this.progress + 1 === this.code.length;
+    const barSoundFinished = completesRound
+      ? this.audio.playBarSoundAndWait()
+      : undefined;
+
+    if (!completesRound) {
+      this.audio.playBarSound();
+    }
+
+    const barOpeningFinished = bar.open();
     this.progress += 1;
     this.meter.setCount(6 - this.progress);
 
-    if (this.progress === this.code.length) {
+    if (completesRound && barSoundFinished) {
+      await Promise.all([barSoundFinished, barOpeningFinished]);
       await this.playWinSequence();
       return;
     }
 
+    await waitUsingGsap(INTERACTION_LOCK_SECONDS);
     this.setState("playing");
   }
 
