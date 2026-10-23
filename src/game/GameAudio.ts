@@ -1,4 +1,5 @@
 import { AUDIO_URLS } from './constants';
+import { waitUsingGsap } from './animation';
 
 const BAR_SOUND_VOLUME = 0.68;
 const TIGER_SOUND_VOLUME = 0.78;
@@ -49,7 +50,7 @@ export class GameAudio {
     this.restartAndPlay(sound);
   }
 
-  public playBarSoundAndWait(): Promise<void> {
+  public playBarSoundAndWait(releaseBeforeEndSeconds = 0): Promise<void> {
     if (this.muted) {
       return Promise.resolve();
     }
@@ -86,7 +87,13 @@ export class GameAudio {
       this.cancelPendingBarWaits.add(cancel);
 
       try {
-        void sound.play().catch(finish);
+        void sound.play().then(() => {
+          if (releaseBeforeEndSeconds > 0 && Number.isFinite(sound.duration)) {
+            void waitUsingGsap(
+              Math.max(0, sound.duration - releaseBeforeEndSeconds),
+            ).then(finish);
+          }
+        }, finish);
       } catch {
         finish();
       }

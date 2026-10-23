@@ -133,20 +133,13 @@ export class GameScene extends Container {
 
     const bar = this.bars[id - 1];
     const completesRound = this.progress + 1 === this.code.length;
-    const barSoundFinished = completesRound
-      ? this.audio.playBarSoundAndWait()
-      : undefined;
-
-    if (!completesRound) {
-      this.audio.playBarSound();
-    }
-
+    this.audio.playBarSound();
     const barOpeningFinished = bar.open();
     this.progress += 1;
     this.meter.setCount(6 - this.progress);
 
-    if (completesRound && barSoundFinished) {
-      await Promise.all([barSoundFinished, barOpeningFinished]);
+    if (completesRound) {
+      await barOpeningFinished;
       await this.playWinSequence();
       return;
     }
